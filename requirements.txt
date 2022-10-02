@@ -1,0 +1,8 @@
+-e .
+
+# linting
+mypy
+pre-commit
+pylint
+
+virtualenv
