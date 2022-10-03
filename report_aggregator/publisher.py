@@ -1,4 +1,5 @@
 """Publish the reports to the web."""
+import json
 import logging
 import shutil
 import subprocess
@@ -92,11 +93,11 @@ def get_new_results(base_dir: Path) -> Generator[Path, None, None]:
 
     for p in base_dir.rglob(consts.DONE_FILE):
         result_file = p.parent / consts.REPORTS_ARCHIVE
-        if result_file.exists():
+        if result_file.is_file():
             yield result_file
 
         result_dir = p.parent / result_artifact_file.stem.split(".")[0]
-        if result_dir.exists():
+        if result_dir.is_dir():
             yield result_dir
 
 
@@ -143,6 +144,31 @@ def get_aggregated_dirs(base_dir: Path) -> Generator[Path, None, None]:
         yield p.parent
 
 
+def gen_badge_endpoint(report_dir: Path) -> Path:
+    """Generate endpoint for shields.io badge."""
+    summary_json = report_dir / "widgets" / "summary.json"
+    badge_json = report_dir / "badge.json"
+
+    with open(summary_json, "r", encoding="utf-8") as in_fp:
+        summary = json.load(in_fp)
+
+    statistic = summary["statistic"]
+    passed = statistic["passed"]
+    failed = statistic["failed"] + statistic["broken"]
+
+    response = {
+        "schemaVersion": 1,
+        "label": "tests",
+        "message": f"{passed} passed, {failed} failed",
+        "color": "red" if failed else "green",
+    }
+
+    with open(badge_json, "w", encoding="utf-8") as out_fp:
+        json.dump(response, out_fp, indent=4)
+
+    return badge_json
+
+
 def generate_reports(
     aggregation_base_dir: Path, aggregated_dirs: List[Path], reports_base_dir: Path
 ) -> List[Path]:
@@ -161,6 +187,8 @@ def generate_reports(
 
         cli_args = ["allure", "generate", str(a_dir), "-o", str(dest_dir), "--clean"]
         cli(cli_args=cli_args)
+
+        gen_badge_endpoint(report_dir=dest_dir)
 
         report_dirs.append(dest_dir)
 
