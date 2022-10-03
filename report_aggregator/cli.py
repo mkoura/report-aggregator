@@ -64,7 +64,16 @@ def nightly(base_dir: str, timedelta_mins: int) -> None:
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
     help="Base directory for published reports.",
 )
-def publish(results_base_dir: str, aggregation_base_dir: str, web_base_dir: str) -> None:
+@click.option(
+    "--force-regenerate",
+    is_flag=True,
+    show_default=True,
+    default=False,
+    help="Force re-genaration of Allure reports.",
+)
+def publish(
+    results_base_dir: str, aggregation_base_dir: str, web_base_dir: str, force_regenerate: bool
+) -> None:
     """Publish reports."""
     with tempfile.TemporaryDirectory() as reports_tmp_dir:
         publisher.publish(
@@ -72,4 +81,5 @@ def publish(results_base_dir: str, aggregation_base_dir: str, web_base_dir: str)
             aggregation_base_dir=Path(aggregation_base_dir),
             web_base_dir=Path(web_base_dir),
             reports_tmp_dir=Path(reports_tmp_dir),
+            force_regenerate=force_regenerate,
         )
