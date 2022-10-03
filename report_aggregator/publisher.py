@@ -152,13 +152,13 @@ def gen_badge_endpoint(report_dir: Path) -> Path:
     with open(summary_json, "r", encoding="utf-8") as in_fp:
         summary = json.load(in_fp)
 
-    statistic = summary["statistic"]
-    passed = statistic["passed"]
-    failed = statistic["failed"] + statistic["broken"]
+    statistic = summary.get("statistic") or {}
+    passed = statistic.get("passed") or 0
+    failed = statistic.get("failed", 0) + statistic.get("broken", 0)
 
     response = {
         "schemaVersion": 1,
-        "label": "tests",
+        "label": "",
         "message": f"{passed} passed, {failed} failed",
         "color": "red" if failed else "green",
     }
