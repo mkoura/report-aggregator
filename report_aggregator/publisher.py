@@ -134,6 +134,12 @@ def aggregate_results(results_base_dir: Path, dest_base_dir: Path) -> List[Path]
     return aggregated_dirs
 
 
+def get_aggregated_dirs(base_dir: Path) -> Generator[Path, None, None]:
+    """Yield aggregated results directories."""
+    for p in base_dir.rglob("environment.properties"):
+        yield p.parent
+
+
 def generate_reports(
     aggregation_base_dir: Path, aggregated_dirs: List[Path], reports_base_dir: Path
 ) -> List[Path]:
@@ -174,7 +180,11 @@ def copy_reports(reports_base_dir: Path, report_dirs: List[Path], web_base_dir: 
 
 
 def publish(
-    results_base_dir: Path, aggregation_base_dir: Path, web_base_dir: Path, reports_tmp_dir: Path
+    results_base_dir: Path,
+    aggregation_base_dir: Path,
+    web_base_dir: Path,
+    reports_tmp_dir: Path,
+    force_regenerate: bool = False,
 ) -> None:
     """Publish reports to the web."""
     # directory where results from different test runs are aggregated
@@ -186,6 +196,8 @@ def publish(
     aggregated_dirs = aggregate_results(
         results_base_dir=results_base_dir, dest_base_dir=aggregation_base_dir
     )
+    if force_regenerate:
+        aggregated_dirs = list(get_aggregated_dirs(base_dir=aggregation_base_dir))
 
     # generate reports from aggregated results
     report_dirs = generate_reports(
