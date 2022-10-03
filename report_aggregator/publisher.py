@@ -1,4 +1,5 @@
 """Publish the reports to the web."""
+import logging
 import shutil
 import subprocess
 import tarfile
@@ -10,6 +11,8 @@ from typing import NamedTuple
 from typing import Tuple
 
 from report_aggregator import consts
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Job(NamedTuple):
@@ -164,8 +167,9 @@ def generate_reports(
     return report_dirs
 
 
-def copy_reports(reports_base_dir: Path, report_dirs: List[Path], web_base_dir: Path) -> None:
+def copy_reports(reports_base_dir: Path, report_dirs: List[Path], web_base_dir: Path) -> List[Path]:
     """Copy reports to dirs served by web server."""
+    web_dirs: List[Path] = []
     for report_dir in report_dirs:
         job_rec = get_job_from_tree(inner_dir=report_dir, base_dir=reports_base_dir)
         dest_dir = web_base_dir / job_rec.job_name
@@ -177,6 +181,9 @@ def copy_reports(reports_base_dir: Path, report_dirs: List[Path], web_base_dir: 
         shutil.rmtree(dest_dir, ignore_errors=True, onerror=None)
         dest_dir.mkdir(parents=True)
         shutil.copytree(report_dir, dest_dir, symlinks=True, dirs_exist_ok=True)
+        web_dirs.append(dest_dir)
+
+    return web_dirs
 
 
 def publish(
@@ -198,6 +205,9 @@ def publish(
     )
     if force_regenerate:
         aggregated_dirs = list(get_aggregated_dirs(base_dir=aggregation_base_dir))
+    else:
+        aggregated_dirs_strs = [str(p) for p in aggregated_dirs]
+        LOGGER.info(f"Aggregated dirs with new results: {aggregated_dirs_strs}")
 
     # generate reports from aggregated results
     report_dirs = generate_reports(
@@ -206,9 +216,11 @@ def publish(
         reports_base_dir=reports_tmp_dir,
     )
 
-    # move reports to dirs served by web server
-    copy_reports(
+    # copy reports to dirs served by web server
+    web_dirs = copy_reports(
         reports_base_dir=reports_tmp_dir,
         report_dirs=report_dirs,
         web_base_dir=web_base_dir,
     )
+    web_dirs_strs = [str(p) for p in web_dirs]
+    LOGGER.info(f"Generated reports: {web_dirs_strs}")
