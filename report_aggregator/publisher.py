@@ -7,7 +7,6 @@ import tarfile
 from pathlib import Path
 from typing import Generator
 from typing import Iterable
-from typing import List
 from typing import NamedTuple
 from typing import Tuple
 
@@ -24,7 +23,7 @@ class Job(NamedTuple):
 
 
 def cli(cli_args: Iterable[str]) -> Tuple[str, str]:
-    """Run command."""
+    """Run CLI command."""
     assert not isinstance(cli_args, str), "`cli_args` must be sequence of strings"
     with subprocess.Popen(list(cli_args), stdout=subprocess.PIPE, stderr=subprocess.PIPE) as p:
         stdout, stderr = p.communicate()
@@ -88,10 +87,13 @@ def get_job_from_tree(inner_dir: Path, base_dir: Path) -> Job:
 
 
 def get_new_results(base_dir: Path) -> Generator[Path, None, None]:
-    """Walk results directories and yield each new set of results."""
+    """Walk new results directories and yield each set of results."""
     result_artifact_file = Path(consts.REPORTS_ARCHIVE)
 
     for p in base_dir.rglob(consts.DONE_FILE):
+        if (p.parent / consts.FETCHED_FILE).exists():
+            continue
+
         result_file = p.parent / consts.REPORTS_ARCHIVE
         if result_file.is_file():
             yield result_file
@@ -112,36 +114,37 @@ def unpack_results_archive(archive_file: Path) -> Path:
     return unpacked_dir
 
 
-def aggregate_results(results_base_dir: Path, dest_base_dir: Path) -> List[Path]:
-    """Aggregate new results with existing results."""
-    aggregated_dirs: List[Path] = []
-    for cur_results in get_new_results(base_dir=results_base_dir):
+def get_results(new_results_base_dir: Path, results_base_dir: Path) -> Generator[Path, None, None]:
+    """Copy/unpack/clean new results."""
+    for cur_results in sorted(get_new_results(base_dir=new_results_base_dir)):
         results_dir = cur_results
+        extracted_dir = None
         if cur_results.name == consts.REPORTS_ARCHIVE:
             results_dir = unpack_results_archive(archive_file=cur_results)
-            cur_results.unlink()
+            extracted_dir = results_dir
 
-        job_rec = get_job_from_results(results_path=cur_results, base_dir=results_base_dir)
-        dest_dir = dest_base_dir / job_rec.job_name
+        job_rec = get_job_from_results(results_path=cur_results, base_dir=new_results_base_dir)
+
+        LOGGER.info(f"Processing {job_rec}")
+
+        dest_dir = results_base_dir / job_rec.job_name
         if job_rec.revision:
             dest_dir = dest_dir / job_rec.revision
         if job_rec.step:
             dest_dir = dest_dir / job_rec.step
 
+        shutil.rmtree(dest_dir, ignore_errors=True, onerror=None)
+        dest_dir.mkdir(parents=True)
         shutil.copytree(results_dir, dest_dir, symlinks=True, dirs_exist_ok=True)
 
-        aggregated_dirs.append(dest_dir)
-
         # delete extracted files
-        shutil.rmtree(results_dir, ignore_errors=False, onerror=None)
+        if extracted_dir:
+            shutil.rmtree(extracted_dir, ignore_errors=True, onerror=None)
 
-    return aggregated_dirs
+        with open(cur_results.parent / consts.FETCHED_FILE, "wb"):
+            pass
 
-
-def get_aggregated_dirs(base_dir: Path) -> Generator[Path, None, None]:
-    """Yield aggregated results directories."""
-    for p in base_dir.rglob("environment.properties"):
-        yield p.parent
+        yield dest_dir
 
 
 def gen_badge_endpoint(report_dir: Path) -> Path:
@@ -169,86 +172,70 @@ def gen_badge_endpoint(report_dir: Path) -> Path:
     return badge_json
 
 
-def generate_reports(
-    aggregation_base_dir: Path, aggregated_dirs: List[Path], reports_base_dir: Path
-) -> List[Path]:
-    """Generate reports from aggregated results."""
-    report_dirs: List[Path] = []
-    for a_dir in aggregated_dirs:
-        job_rec = get_job_from_tree(inner_dir=a_dir, base_dir=aggregation_base_dir)
-        dest_dir = reports_base_dir / job_rec.job_name
-        if job_rec.revision:
-            dest_dir = dest_dir / job_rec.revision
-        if job_rec.step:
-            dest_dir = dest_dir / job_rec.step
+def copy_history(prev_report_dir: Path, results_dir: Path) -> None:
+    """Copy history files from previous report to results dir."""
+    history_dir = prev_report_dir / "history"
+    if not history_dir.is_dir():
+        return
 
-        shutil.rmtree(dest_dir, ignore_errors=True, onerror=None)
-        dest_dir.mkdir(parents=True)
-
-        cli_args = ["allure", "generate", str(a_dir), "-o", str(dest_dir), "--clean"]
-        cli(cli_args=cli_args)
-
-        gen_badge_endpoint(report_dir=dest_dir)
-
-        report_dirs.append(dest_dir)
-
-    return report_dirs
+    shutil.rmtree(results_dir / "history", ignore_errors=True, onerror=None)
+    shutil.copytree(history_dir, results_dir / "history", symlinks=True)
 
 
-def copy_reports(reports_base_dir: Path, report_dirs: List[Path], web_base_dir: Path) -> List[Path]:
-    """Copy reports to dirs served by web server."""
-    web_dirs: List[Path] = []
-    for report_dir in report_dirs:
-        job_rec = get_job_from_tree(inner_dir=report_dir, base_dir=reports_base_dir)
-        dest_dir = web_base_dir / job_rec.job_name
-        if job_rec.revision:
-            dest_dir = dest_dir / job_rec.revision
-        if job_rec.step:
-            dest_dir = dest_dir / job_rec.step
+def generate_report(
+    results_base_dir: Path, results_dir: Path, reports_base_dir: Path, web_base_dir: Path
+) -> Path:
+    """Generate report from stored results."""
+    job_rec = get_job_from_tree(inner_dir=results_dir, base_dir=results_base_dir)
+    dest_path_parts = [job_rec.job_name]
+    if job_rec.revision:
+        dest_path_parts.append(job_rec.revision)
+    if job_rec.step:
+        dest_path_parts.append(job_rec.step)
 
-        shutil.rmtree(dest_dir, ignore_errors=True, onerror=None)
-        dest_dir.mkdir(parents=True)
-        shutil.copytree(report_dir, dest_dir, symlinks=True, dirs_exist_ok=True)
-        web_dirs.append(dest_dir)
+    report_dir = Path(*reports_base_dir.parts, *dest_path_parts)
+    web_dir = Path(*web_base_dir.parts, *dest_path_parts)
 
-    return web_dirs
+    # make clean temporary directory for generated report
+    shutil.rmtree(report_dir, ignore_errors=True, onerror=None)
+    report_dir.mkdir(parents=True)
+
+    # copy history files from last published report
+    copy_history(prev_report_dir=web_dir, results_dir=results_dir)
+
+    cli_args = ["allure", "generate", str(results_dir), "-o", str(report_dir), "--clean"]
+    cli(cli_args=cli_args)
+
+    gen_badge_endpoint(report_dir=report_dir)
+
+    shutil.rmtree(web_dir, ignore_errors=True, onerror=None)
+    web_dir.mkdir(parents=True)
+    shutil.copytree(report_dir, web_dir, symlinks=True, dirs_exist_ok=True)
+
+    return web_dir
 
 
 def publish(
+    new_results_base_dir: Path,
     results_base_dir: Path,
-    aggregation_base_dir: Path,
     web_base_dir: Path,
     reports_tmp_dir: Path,
-    force_regenerate: bool = False,
 ) -> None:
     """Publish reports to the web."""
-    # directory where results from different test runs are aggregated
-    aggregation_base_dir.mkdir(parents=True, exist_ok=True)
+    # directory where results from last run are stored
+    results_base_dir.mkdir(parents=True, exist_ok=True)
     # temp dir where reports are generated before moving to the web dir
     reports_tmp_dir.mkdir(parents=True, exist_ok=True)
 
-    # aggregate results
-    aggregated_dirs = aggregate_results(
-        results_base_dir=results_base_dir, dest_base_dir=aggregation_base_dir
-    )
-    if force_regenerate:
-        aggregated_dirs = list(get_aggregated_dirs(base_dir=aggregation_base_dir))
-    else:
-        aggregated_dirs_strs = [str(p) for p in aggregated_dirs]
-        LOGGER.info(f"Aggregated dirs with new results: {aggregated_dirs_strs}")
-
-    # generate reports from aggregated results
-    report_dirs = generate_reports(
-        aggregation_base_dir=aggregation_base_dir,
-        aggregated_dirs=aggregated_dirs,
-        reports_base_dir=reports_tmp_dir,
+    results_dirs = get_results(
+        new_results_base_dir=new_results_base_dir, results_base_dir=results_base_dir
     )
 
-    # copy reports to dirs served by web server
-    web_dirs = copy_reports(
-        reports_base_dir=reports_tmp_dir,
-        report_dirs=report_dirs,
-        web_base_dir=web_base_dir,
-    )
-    web_dirs_strs = [str(p) for p in web_dirs]
-    LOGGER.info(f"Generated reports: {web_dirs_strs}")
+    for results_dir in results_dirs:
+        web_dir = generate_report(
+            results_base_dir=results_base_dir,
+            results_dir=results_dir,
+            reports_base_dir=reports_tmp_dir,
+            web_base_dir=web_base_dir,
+        )
+        LOGGER.info(f"Generated report: {web_dir}")

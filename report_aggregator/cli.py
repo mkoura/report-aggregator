@@ -47,39 +47,26 @@ def nightly(base_dir: str, timedelta_mins: int) -> None:
 
 @cli.command()
 @click.option(
-    "--results-base-dir",
+    "--results-dir",
     required=True,
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
     help="Base directory with results.",
 )
 @click.option(
-    "--aggregation-base-dir",
-    required=True,
-    type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    help="Base directory with aggregated results.",
-)
-@click.option(
-    "--web-base-dir",
+    "--web-dir",
     required=True,
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
     help="Base directory for published reports.",
 )
-@click.option(
-    "--force-regenerate",
-    is_flag=True,
-    show_default=True,
-    default=False,
-    help="Force re-genaration of Allure reports.",
-)
-def publish(
-    results_base_dir: str, aggregation_base_dir: str, web_base_dir: str, force_regenerate: bool
-) -> None:
+def publish(results_dir: str, web_dir: str) -> None:
     """Publish reports."""
-    with tempfile.TemporaryDirectory() as reports_tmp_dir:
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        results_tmp_dir = Path(tmp_dir) / "results"
+        reports_tmp_dir = Path(tmp_dir) / "reports"
+
         publisher.publish(
-            results_base_dir=Path(results_base_dir),
-            aggregation_base_dir=Path(aggregation_base_dir),
-            web_base_dir=Path(web_base_dir),
+            new_results_base_dir=Path(results_dir),
+            results_base_dir=Path(results_tmp_dir),
+            web_base_dir=Path(web_dir),
             reports_tmp_dir=Path(reports_tmp_dir),
-            force_regenerate=force_regenerate,
         )
