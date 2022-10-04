@@ -157,12 +157,13 @@ def gen_badge_endpoint(report_dir: Path) -> Path:
 
     statistic = summary.get("statistic") or {}
     passed = statistic.get("passed") or 0
-    failed = statistic.get("failed", 0) + statistic.get("broken", 0)
+    failed = statistic.get("failed") or 0
+    broken = statistic.get("broken") or 0
 
     response = {
         "schemaVersion": 1,
         "label": "",
-        "message": f"{passed} passed, {failed} failed",
+        "message": f"{passed} passed, {failed} failed, {broken} broken",
         "color": "red" if failed else "green",
     }
 
@@ -180,6 +181,30 @@ def copy_history(prev_report_dir: Path, results_dir: Path) -> None:
 
     shutil.rmtree(results_dir / "history", ignore_errors=True, onerror=None)
     shutil.copytree(history_dir, results_dir / "history", symlinks=True)
+
+
+def overwrite_statuses(results_dir: Path) -> None:
+    """Overwrite selected test statuses.
+
+    broken -> failed
+    XFAIL skipped -> broken
+    """
+    for result_json in results_dir.glob("*-result.json"):
+        overwrite = False
+
+        with open(result_json, "r", encoding="utf-8") as in_fp:
+            result = json.load(in_fp)
+
+        if result["status"] == "skipped" and "XFAIL reason" in result["statusDetails"]["message"]:
+            result["status"] = "broken"
+            overwrite = True
+        elif result["status"] == "broken":
+            result["status"] = "failed"
+            overwrite = True
+
+        if overwrite:
+            with open(result_json, "w", encoding="utf-8") as out_fp:
+                json.dump(result, out_fp)
 
 
 def generate_report(
@@ -203,9 +228,14 @@ def generate_report(
     # copy history files from last published report
     copy_history(prev_report_dir=web_dir, results_dir=results_dir)
 
+    # overwrite selected statuses
+    overwrite_statuses(results_dir=results_dir)
+
+    # generate Allure report
     cli_args = ["allure", "generate", str(results_dir), "-o", str(report_dir), "--clean"]
     cli(cli_args=cli_args)
 
+    # generate badge endpoint
     gen_badge_endpoint(report_dir=report_dir)
 
     shutil.rmtree(web_dir, ignore_errors=True, onerror=None)
