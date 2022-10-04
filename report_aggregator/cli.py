@@ -28,7 +28,7 @@ def cli(log_level: str = DEFAULT_LOG_LEVEL) -> None:
 
 @cli.command()
 @click.option(
-    "--base-dir",
+    "--results-dir",
     required=True,
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
     help="Base directory for results.",
@@ -38,11 +38,13 @@ def cli(log_level: str = DEFAULT_LOG_LEVEL) -> None:
     type=int,
     default=consts.TIMEDELTA_MINS,
     show_default=True,
-    help="Look for jobs finished number of minutes in the past from now.",
+    help="Look for jobs finished from TIMEDELTA_MINS in the past until now (in minutes).",
 )
-def nightly(base_dir: str, timedelta_mins: int) -> None:
+def nightly(results_dir: str, timedelta_mins: int) -> None:
     """Download nightly results."""
-    nightly_results.download_nightly_results(base_dir=Path(base_dir), timedelta_mins=timedelta_mins)
+    nightly_results.download_nightly_results(
+        base_dir=Path(results_dir), timedelta_mins=timedelta_mins
+    )
 
 
 @cli.command()
