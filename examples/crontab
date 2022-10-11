@@ -1,0 +1,2 @@
+# m    h  dom mon dow   command
+*/30   *   *   *   *    $HOME/report-aggregator/cron_job.sh
