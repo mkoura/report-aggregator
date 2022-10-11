@@ -1,0 +1,5 @@
+# activate python virtual env
+. .env/bin/activate
+
+# export Buildkite API token
+export BUILDKITE_TOKEN=XXX
