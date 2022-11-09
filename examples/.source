@@ -3,3 +3,6 @@
 
 # export Buildkite API token
 export BUILDKITE_TOKEN=XXX
+
+# export Github token
+export GITHUB_TOKEN=XXX

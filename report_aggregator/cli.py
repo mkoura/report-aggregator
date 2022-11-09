@@ -5,7 +5,8 @@ from pathlib import Path
 import click
 
 from report_aggregator import consts
-from report_aggregator import nightly_results
+from report_aggregator import nightly_buildkite
+from report_aggregator import nightly_github
 from report_aggregator import publisher
 
 
@@ -26,7 +27,7 @@ def cli(log_level: str = DEFAULT_LOG_LEVEL) -> None:
     init_log(log_level=log_level)
 
 
-@cli.command()
+@cli.command("nightly-buildkite")
 @click.option(
     "--results-dir",
     required=True,
@@ -40,9 +41,30 @@ def cli(log_level: str = DEFAULT_LOG_LEVEL) -> None:
     show_default=True,
     help="Look for jobs finished from TIMEDELTA_MINS in the past until now (in minutes).",
 )
-def nightly(results_dir: str, timedelta_mins: int) -> None:
-    """Download nightly results."""
-    nightly_results.download_nightly_results(
+def nightly_buildkite_cli(results_dir: str, timedelta_mins: int) -> None:
+    """Download nightly results from Buildkite."""
+    nightly_buildkite.download_nightly_results(
+        base_dir=Path(results_dir), timedelta_mins=timedelta_mins
+    )
+
+
+@cli.command("nightly-github")
+@click.option(
+    "--results-dir",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Base directory for results.",
+)
+@click.option(
+    "--timedelta-mins",
+    type=int,
+    default=consts.TIMEDELTA_MINS,
+    show_default=True,
+    help="Look for runs started from TIMEDELTA_MINS in the past until now (in minutes).",
+)
+def nightly_github_cli(results_dir: str, timedelta_mins: int) -> None:
+    """Download nightly results from Buildkite."""
+    nightly_github.download_nightly_results(
         base_dir=Path(results_dir), timedelta_mins=timedelta_mins
     )
 
