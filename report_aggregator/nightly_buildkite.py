@@ -19,16 +19,16 @@ SLUG_BASE = "cardano-node-tests-nightly"
 DISABLED_BRANCH = "disabled"
 
 
-def get_pipelines(buildkite_obj: buildkite.Buildkite) -> Dict[str, Dict[str, Any]]:
+def get_pipelines(buildkite_obj: buildkite.Buildkite) -> List[Dict[str, Any]]:
     """Return active nightly pipelines."""
     pipelines_org = buildkite_obj.pipelines().list_pipelines(organization=ORG_NAME)
-    pipelines = {
-        p["slug"]: p
+    pipelines = [
+        p
         for p in pipelines_org
         if p["slug"].startswith(SLUG_BASE)
         and p["default_branch"] != DISABLED_BRANCH
         and not p["archived_at"]
-    }
+    ]
     return pipelines
 
 
@@ -97,8 +97,9 @@ def download_nightly_results(base_dir: Path, timedelta_mins: int = consts.TIMEDE
 
     check_from_time = datetime.datetime.now() - datetime.timedelta(minutes=timedelta_mins)
 
-    pipelines = get_pipelines(buildkite_obj)
-    for pipeline_slug, pipeline in pipelines.items():
+    pipelines = get_pipelines(buildkite_obj=buildkite_obj)
+    for pipeline in pipelines:
+        pipeline_slug = pipeline["slug"]
         LOGGER.info(f"Processing pipeline: {pipeline_slug}")
         builds = get_builds(
             buildkite_obj=buildkite_obj, pipeline_slug=pipeline_slug, finished_from=check_from_time
