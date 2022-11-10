@@ -12,5 +12,5 @@ pushd "$SCRIPT_DIR" > /dev/null
 
 mkdir -p results/new
 
-report-aggregator --log-level info nightly --results-dir results/new --timedelta-mins 2100
+report-aggregator --log-level info nightly-buildkite --results-dir results/new --timedelta-mins 2100
 report-aggregator --log-level info publish --results-dir results/new --web-dir /var/www/reports
