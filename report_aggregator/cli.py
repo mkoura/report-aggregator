@@ -48,7 +48,7 @@ def nightly_buildkite_cli(results_dir: str, timedelta_mins: int) -> None:
     )
 
 
-@cli.command("nightly-github")
+@cli.command("nightly")
 @click.option(
     "--results-dir",
     required=True,
@@ -63,7 +63,7 @@ def nightly_buildkite_cli(results_dir: str, timedelta_mins: int) -> None:
     help="Look for runs started from TIMEDELTA_MINS in the past until now (in minutes).",
 )
 def nightly_github_cli(results_dir: str, timedelta_mins: int) -> None:
-    """Download nightly results from Buildkite."""
+    """Download nightly results from Github."""
     nightly_github.download_nightly_results(
         base_dir=Path(results_dir), timedelta_mins=timedelta_mins
     )

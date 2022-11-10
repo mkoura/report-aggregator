@@ -49,7 +49,7 @@ def get_runs(
     return runs
 
 
-def get_run_artifacts(
+def get_result_artifacts(
     run: github.WorkflowRun.WorkflowRun,
 ) -> Generator[github.Artifact.Artifact, None, None]:
     """Return results artifacts for a run."""
@@ -59,7 +59,8 @@ def get_run_artifacts(
     return result_artifacts
 
 
-def download_run_results(url: str, dest_file: Path) -> Path:
+def download_artifact(url: str, dest_file: Path) -> Path:
+    """Download artifact from Github."""
     if not url.startswith("https://"):
         raise ValueError(f"Invalid URL: {url}")
 
@@ -87,8 +88,12 @@ def download_nightly_results(base_dir: Path, timedelta_mins: int = consts.TIMEDE
             run_num = cur_run.run_number + RUN_OFFSET
             LOGGER.info(f"Processing run: {cur_run.run_number} ({run_num})")
 
-            result_artifacts = list(get_run_artifacts(run=cur_run))
+            result_artifacts = list(get_result_artifacts(run=cur_run))
             has_steps = len(result_artifacts) > 1
+
+            if has_steps and "step" not in result_artifacts[0].name:
+                LOGGER.warning("Skipping run with unexpected artifacts")
+                continue
 
             for step, artifact in enumerate(result_artifacts):
                 dest_dir = base_dir / workflow_slug / str(run_num)
@@ -103,7 +108,7 @@ def download_nightly_results(base_dir: Path, timedelta_mins: int = consts.TIMEDE
                     zip_file.unlink(missing_ok=True)
                     LOGGER.info(f"Downloading artifact: {dest_file}")
 
-                    download_run_results(
+                    download_artifact(
                         url=artifact.archive_download_url,
                         dest_file=zip_file,
                     )
