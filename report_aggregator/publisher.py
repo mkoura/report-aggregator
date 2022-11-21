@@ -152,7 +152,7 @@ def gen_badge_endpoint(report_dir: Path) -> Path:
     summary_json = report_dir / "widgets" / "summary.json"
     badge_json = report_dir / "badge.json"
 
-    with open(summary_json, "r", encoding="utf-8") as in_fp:
+    with open(summary_json, encoding="utf-8") as in_fp:
         summary = json.load(in_fp)
 
     statistic = summary.get("statistic") or {}
@@ -192,7 +192,7 @@ def overwrite_statuses(results_dir: Path) -> None:
     for result_json in results_dir.glob("*-result.json"):
         overwrite = False
 
-        with open(result_json, "r", encoding="utf-8") as in_fp:
+        with open(result_json, encoding="utf-8") as in_fp:
             result = json.load(in_fp)
 
         if result["status"] == "skipped" and "XFAIL reason" in result["statusDetails"]["message"]:
