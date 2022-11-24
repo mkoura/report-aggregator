@@ -38,13 +38,9 @@ def get_runs(
     workflow: github.Workflow.Workflow, started_from: datetime.datetime
 ) -> Generator[github.WorkflowRun.WorkflowRun, None, None]:
     """Return recent runs for a workflow."""
-    for r in workflow.get_runs():
+    for r in workflow.get_runs(branch="master", event="schedule", status="completed"):
         if r.created_at < started_from:
             return
-
-        if not (r.status == "completed" and r.event == "schedule" and r.head_branch == "master"):
-            continue
-
         yield r
 
 
