@@ -1,7 +1,6 @@
-"""Download testing results from Github."""
+"""Download nightly testing results from Github."""
 import datetime
 import logging
-import os
 import zipfile
 from pathlib import Path
 from typing import Generator
@@ -13,10 +12,6 @@ from report_aggregator import consts
 
 LOGGER = logging.getLogger(__name__)
 
-ORG_NAME = "input-output-hk"
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") or ""
-HTTP_HEADERS = {"Accept": "application/vnd.github+json", "Authorization": f"Bearer {GITHUB_TOKEN}"}
-ARTIFACT_NAME = "allure-results"
 NAME_BASE = "Nightly tests"
 RUN_OFFSET = 2000  # we need higher number than Buildkite build
 
@@ -27,10 +22,11 @@ def get_slug(name: str) -> str:
     return slug
 
 
-def get_workflows(github_obj: github.Github) -> Generator[github.Workflow.Workflow, None, None]:
+def get_workflows(
+    repo_obj: github.Repository.Repository,
+) -> Generator[github.Workflow.Workflow, None, None]:
     """Return active nightly workflows."""
-    repo = github_obj.get_repo("input-output-hk/cardano-node-tests")
-    workflows = (w for w in repo.get_workflows() if NAME_BASE in w.name and w.state == "active")
+    workflows = (w for w in repo_obj.get_workflows() if NAME_BASE in w.name and w.state == "active")
     return workflows
 
 
@@ -49,7 +45,7 @@ def get_result_artifacts(
 ) -> Generator[github.Artifact.Artifact, None, None]:
     """Return results artifacts for a run."""
     result_artifacts = (
-        a for a in run.get_artifacts() if a.name.startswith(ARTIFACT_NAME)  # type: ignore
+        a for a in run.get_artifacts() if a.name.startswith(consts.ARTIFACT_NAME)  # type: ignore
     )
     return result_artifacts
 
@@ -60,7 +56,7 @@ def download_artifact(url: str, dest_file: Path) -> Path:
         raise ValueError(f"Invalid URL: {url}")
 
     with requests.get(
-        url, headers=HTTP_HEADERS, stream=True, allow_redirects=True, timeout=300
+        url, headers=consts.AUTH_HEADERS, stream=True, allow_redirects=True, timeout=300
     ) as r:
         r.raise_for_status()
         with open(dest_file, "wb") as f:
@@ -70,12 +66,15 @@ def download_artifact(url: str, dest_file: Path) -> Path:
     return dest_file
 
 
-def download_nightly_results(base_dir: Path, timedelta_mins: int = consts.TIMEDELTA_MINS) -> None:
+def download_nightly_results(
+    base_dir: Path, repo_slug: str = consts.REPO_SLUG, timedelta_mins: int = consts.TIMEDELTA_MINS
+) -> None:
     """Download results from all recent nightly jobs."""
-    github_obj = github.Github(GITHUB_TOKEN)
+    github_obj = github.Github(consts.GITHUB_TOKEN)
+    repo_obj = github_obj.get_repo(repo_slug)
     started_from = datetime.datetime.now() - datetime.timedelta(minutes=timedelta_mins)
 
-    for workflow in get_workflows(github_obj=github_obj):
+    for workflow in get_workflows(repo_obj=repo_obj):
         workflow_slug = get_slug(name=workflow.name)
         LOGGER.info(f"Processing workflow: {workflow.name} ({workflow_slug})")
 
@@ -96,7 +95,7 @@ def download_nightly_results(base_dir: Path, timedelta_mins: int = consts.TIMEDE
                     dest_dir = dest_dir / f"{consts.STEPS_BASE}{step}"
                 dest_dir.mkdir(parents=True, exist_ok=True)
                 dest_file = dest_dir / consts.REPORTS_ARCHIVE
-                zip_file = dest_dir / f"{ARTIFACT_NAME}.zip"
+                zip_file = dest_dir / f"{consts.ARTIFACT_NAME}.zip"
 
                 if not (dest_dir / consts.DONE_FILE).exists():
                     dest_file.unlink(missing_ok=True)
