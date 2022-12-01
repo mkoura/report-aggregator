@@ -8,6 +8,7 @@ from report_aggregator import consts
 from report_aggregator import nightly_buildkite
 from report_aggregator import nightly_github
 from report_aggregator import publisher
+from report_aggregator import regression_github
 
 
 DEFAULT_LOG_LEVEL = "WARNING"
@@ -70,6 +71,47 @@ def nightly_github_cli(results_dir: str, timedelta_mins: int) -> None:
     """Download nightly results from Github."""
     nightly_github.download_nightly_results(
         base_dir=Path(results_dir), timedelta_mins=timedelta_mins
+    )
+
+
+@cli.command("testrun")
+@click.option(
+    "-d",
+    "--results-dir",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Base directory for results.",
+)
+@click.option(
+    "-n",
+    "--testrun-name",
+    required=True,
+    help="Name of the testrun to download results for.",
+)
+@click.option(
+    "-r",
+    "--repo-slug",
+    default=consts.REPO_SLUG,
+    show_default=True,
+    help="Repository slug to download results from.",
+)
+@click.option(
+    "-m",
+    "--timedelta-mins",
+    type=int,
+    default=regression_github.SEARCH_PAST_MINS,
+    show_default=True,
+    help="Look for runs started from TIMEDELTA_MINS in the past until now (in minutes).",
+)
+def regression_github_cli(
+    results_dir: str, testrun_name: str, repo_slug: str, timedelta_mins: int
+) -> None:
+    """Download regression results for testrun from Github."""
+    regression_github.download_testrun_results(
+        base_dir=Path(results_dir),
+        testrun_name=testrun_name,
+        repo_slug=repo_slug,
+        timedelta_mins=timedelta_mins,
     )
 
 
