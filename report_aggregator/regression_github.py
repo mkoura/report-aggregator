@@ -1,4 +1,4 @@
-"""Download nightly testing results from Github."""
+"""Download regression testing results from Github."""
 import datetime
 import logging
 import zipfile
@@ -12,31 +12,39 @@ from report_aggregator import consts
 
 LOGGER = logging.getLogger(__name__)
 
-NAME_BASE = "Nightly tests"
-RUN_OFFSET = 2000  # we need higher number than Buildkite build
+NAME_BASE = "Regression tests"
+SEARCH_PAST_MINS = 60 * 24 * 10
 
 
 def get_slug(name: str) -> str:
-    """Return slug that corresponds to Buildkite pipelines."""
-    slug = name.replace(" ", "-").lower().replace("nightly-tests", "cardano-node-tests-nightly")
+    slug = name.replace(" ", "-").lower()
     return slug
 
 
 def get_workflows(
     repo_obj: github.Repository.Repository,
 ) -> Generator[github.Workflow.Workflow, None, None]:
-    """Return active nightly workflows."""
+    """Return active regression workflows."""
     workflows = (w for w in repo_obj.get_workflows() if NAME_BASE in w.name and w.state == "active")
     return workflows
 
 
 def get_runs(
-    workflow: github.Workflow.Workflow, started_from: datetime.datetime
+    workflow: github.Workflow.Workflow, testrun_name: str, started_from: datetime.datetime
 ) -> Generator[github.WorkflowRun.WorkflowRun, None, None]:
     """Return recent runs for a workflow."""
-    for r in workflow.get_runs(branch="master", event="schedule", status="completed"):
+    for r in workflow.get_runs(event="workflow_dispatch", status="completed"):
         if r.created_at < started_from:
             return
+
+        if f"Run: {testrun_name}" not in r.raw_data["name"]:
+            continue
+
+        if ":repeat:" not in r.raw_data["name"]:
+            # this is the first full testrun, no need to look further
+            yield r
+            return
+
         yield r
 
 
@@ -66,21 +74,35 @@ def download_artifact(url: str, dest_file: Path) -> Path:
     return dest_file
 
 
-def download_nightly_results(
-    base_dir: Path, repo_slug: str = consts.REPO_SLUG, timedelta_mins: int = consts.TIMEDELTA_MINS
+def download_testrun_results(
+    base_dir: Path,
+    testrun_name: str,
+    repo_slug: str = consts.REPO_SLUG,
+    timedelta_mins: int = SEARCH_PAST_MINS,
 ) -> None:
     """Download results from all recent nightly jobs."""
     github_obj = github.Github(consts.GITHUB_TOKEN)
     repo_obj = github_obj.get_repo(repo_slug)
     started_from = datetime.datetime.now() - datetime.timedelta(minutes=timedelta_mins)
 
+    LOGGER.info(f"Searching for run '{testrun_name}' since {started_from}")
+    workflow_found = False
+
     for workflow in get_workflows(repo_obj=repo_obj):
         workflow_slug = get_slug(name=workflow.name)
+        testrun_slug = get_slug(name=testrun_name)
+        base_dest_dir = base_dir / workflow_slug / testrun_slug
+        if not (base_dest_dir / "testrun_name.txt").exists():
+            base_dest_dir.mkdir(parents=True, exist_ok=True)
+            (base_dest_dir / "testrun_name.txt").write_text(testrun_name)
+
         LOGGER.info(f"Processing workflow: {workflow.name} ({workflow_slug})")
 
-        for cur_run in get_runs(workflow=workflow, started_from=started_from):
-            run_num = cur_run.run_number + RUN_OFFSET
-            LOGGER.info(f"Processing run: {cur_run.run_number} ({run_num})")
+        for cur_run in get_runs(
+            workflow=workflow, testrun_name=testrun_name, started_from=started_from
+        ):
+            LOGGER.info(f"Processing run: {cur_run.run_number}")
+            workflow_found = True
 
             result_artifacts = list(get_result_artifacts(run=cur_run))
             has_steps = len(result_artifacts) > 1
@@ -90,7 +112,7 @@ def download_nightly_results(
                 continue
 
             for step, artifact in enumerate(result_artifacts):
-                dest_dir = base_dir / workflow_slug / str(run_num)
+                dest_dir = base_dest_dir / str(cur_run.run_number)
                 if has_steps:
                     dest_dir = dest_dir / f"{consts.STEPS_BASE}{step}"
                 dest_dir.mkdir(parents=True, exist_ok=True)
@@ -113,3 +135,7 @@ def download_nightly_results(
 
                 with open(dest_dir / consts.DONE_FILE, "wb"):
                     pass
+
+        # the workflow with matching runs was found, no need to search in other workflows
+        if workflow_found:
+            break
