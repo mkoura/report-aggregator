@@ -29,12 +29,14 @@ def cli(log_level: str = DEFAULT_LOG_LEVEL) -> None:
 
 @cli.command("nightly-buildkite")
 @click.option(
+    "-d",
     "--results-dir",
     required=True,
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
     help="Base directory for results.",
 )
 @click.option(
+    "-m",
     "--timedelta-mins",
     type=int,
     default=consts.TIMEDELTA_MINS,
@@ -50,12 +52,14 @@ def nightly_buildkite_cli(results_dir: str, timedelta_mins: int) -> None:
 
 @cli.command("nightly")
 @click.option(
+    "-d",
     "--results-dir",
     required=True,
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
     help="Base directory for results.",
 )
 @click.option(
+    "-m",
     "--timedelta-mins",
     type=int,
     default=consts.TIMEDELTA_MINS,
@@ -71,12 +75,14 @@ def nightly_github_cli(results_dir: str, timedelta_mins: int) -> None:
 
 @cli.command()
 @click.option(
+    "-d",
     "--results-dir",
     required=True,
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
     help="Base directory with results.",
 )
 @click.option(
+    "-w",
     "--web-dir",
     required=True,
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
