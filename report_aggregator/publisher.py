@@ -7,6 +7,7 @@ import tarfile
 from pathlib import Path
 from typing import Generator
 from typing import Iterable
+from typing import List
 from typing import NamedTuple
 from typing import Tuple
 
@@ -147,6 +148,31 @@ def get_results(new_results_base_dir: Path, results_base_dir: Path) -> Generator
         yield dest_dir
 
 
+def aggregate_testrun(results_dirs: Iterable[Path], results_base_dir: Path) -> List[Path]:
+    """Aggregate new results from the same testrun (job)."""
+    mixed_results = results_base_dir / "mixed_results"
+    shutil.rmtree(mixed_results, ignore_errors=True, onerror=None)
+    mixed_results.mkdir(parents=True, exist_ok=True)
+
+    dest_dirs = set()
+    for results_dir in results_dirs:
+        job_rec = get_job_from_tree(inner_dir=results_dir, base_dir=results_base_dir)
+
+        LOGGER.info(f"Aggregating {job_rec}")
+
+        dest_dir = mixed_results / job_rec.job_name
+        if job_rec.revision:
+            dest_dir = dest_dir / job_rec.revision
+        if job_rec.step:
+            dest_dir = dest_dir / job_rec.step
+
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(results_dir, dest_dir, symlinks=True, dirs_exist_ok=True)
+        dest_dirs.add(dest_dir)
+
+    return list(dest_dirs)
+
+
 def gen_badge_endpoint(report_dir: Path) -> Path:
     """Generate endpoint for shields.io badge."""
     summary_json = report_dir / "widgets" / "summary.json"
@@ -250,6 +276,7 @@ def publish(
     results_base_dir: Path,
     web_base_dir: Path,
     reports_tmp_dir: Path,
+    aggregate_results: bool = False,
 ) -> None:
     """Publish reports to the web."""
     # directory where results from last run are stored
@@ -257,9 +284,13 @@ def publish(
     # temp dir where reports are generated before moving to the web dir
     reports_tmp_dir.mkdir(parents=True, exist_ok=True)
 
-    results_dirs = get_results(
+    results_dirs: Iterable[Path] = get_results(
         new_results_base_dir=new_results_base_dir, results_base_dir=results_base_dir
     )
+    if aggregate_results:
+        results_dirs = aggregate_testrun(
+            results_dirs=results_dirs, results_base_dir=results_base_dir
+        )
 
     for results_dir in results_dirs:
         web_dir = generate_report(
