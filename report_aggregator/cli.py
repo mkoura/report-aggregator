@@ -130,7 +130,14 @@ def regression_github_cli(
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
     help="Base directory for published reports.",
 )
-def publish(results_dir: str, web_dir: str) -> None:
+@click.option(
+    "--aggregate",
+    is_flag=True,
+    show_default=True,
+    default=False,
+    help="Aggregate new results from the same testrun (job).",
+)
+def publish(results_dir: str, web_dir: str, aggregate: bool) -> None:
     """Publish reports."""
     with tempfile.TemporaryDirectory() as tmp_dir:
         results_tmp_dir = Path(tmp_dir) / "results"
@@ -141,4 +148,5 @@ def publish(results_dir: str, web_dir: str) -> None:
             results_base_dir=Path(results_tmp_dir),
             web_base_dir=Path(web_dir),
             reports_tmp_dir=Path(reports_tmp_dir),
+            aggregate_results=aggregate,
         )
