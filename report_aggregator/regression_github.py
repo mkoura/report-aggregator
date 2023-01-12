@@ -111,7 +111,7 @@ def download_testrun_results(
                 LOGGER.warning("Skipping run with unexpected artifacts")
                 continue
 
-            for step, artifact in enumerate(result_artifacts):
+            for step, artifact in enumerate(result_artifacts, start=1):
                 dest_dir = base_dest_dir / str(cur_run.run_number)
                 if has_steps:
                     dest_dir = dest_dir / f"{consts.STEPS_BASE}{step}"

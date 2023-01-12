@@ -89,7 +89,7 @@ def download_nightly_results(
                 LOGGER.warning("Skipping run with unexpected artifacts")
                 continue
 
-            for step, artifact in enumerate(result_artifacts):
+            for step, artifact in enumerate(result_artifacts, start=1):
                 dest_dir = base_dir / workflow_slug / str(run_num)
                 if has_steps:
                     dest_dir = dest_dir / f"{consts.STEPS_BASE}{step}"
