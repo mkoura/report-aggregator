@@ -89,8 +89,6 @@ def get_job_from_tree(inner_dir: Path, base_dir: Path) -> Job:
 
 def get_new_results(base_dir: Path) -> Generator[Path, None, None]:
     """Walk new results directories and yield each set of results."""
-    result_artifact_file = Path(consts.REPORTS_ARCHIVE)
-
     for p in base_dir.rglob(consts.DONE_FILE):
         if (p.parent / consts.FETCHED_FILE).exists():
             continue
@@ -99,7 +97,7 @@ def get_new_results(base_dir: Path) -> Generator[Path, None, None]:
         if result_file.is_file():
             yield result_file
 
-        result_dir = p.parent / result_artifact_file.stem.split(".")[0]
+        result_dir = p.parent / consts.REPORTS_DIRNAME
         if result_dir.is_dir():
             yield result_dir
 
@@ -111,7 +109,7 @@ def unpack_results_archive(archive_file: Path) -> Path:
     with tarfile.open(archive_file, "r:xz") as tar:
         tar.extractall(path=results_dir)
 
-    unpacked_dir = results_dir / archive_file.stem.split(".")[0]
+    unpacked_dir = results_dir / consts.REPORTS_DIRNAME
     return unpacked_dir
 
 
@@ -142,8 +140,7 @@ def get_results(new_results_base_dir: Path, results_base_dir: Path) -> Generator
         if extracted_dir:
             shutil.rmtree(extracted_dir, ignore_errors=True, onerror=None)
 
-        with open(cur_results.parent / consts.FETCHED_FILE, "wb"):
-            pass
+        (cur_results.parent / consts.FETCHED_FILE).touch()
 
         yield dest_dir
 
