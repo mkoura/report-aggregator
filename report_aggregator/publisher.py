@@ -89,8 +89,8 @@ def get_job_from_tree(inner_dir: Path, base_dir: Path) -> Job:
 
 def get_new_results(base_dir: Path) -> Generator[Path, None, None]:
     """Walk new results directories and yield each set of results."""
-    for p in base_dir.rglob(consts.DONE_FILE):
-        if (p.parent / consts.FETCHED_FILE).exists():
+    for p in base_dir.rglob(consts.DOWNLOADED_SFILE):
+        if (p.parent / consts.PUBLISHED_SFILE).exists():
             continue
 
         result_file = p.parent / consts.REPORTS_ARCHIVE
@@ -140,7 +140,7 @@ def get_results(new_results_base_dir: Path, results_base_dir: Path) -> Generator
         if extracted_dir:
             shutil.rmtree(extracted_dir, ignore_errors=True, onerror=None)
 
-        (cur_results.parent / consts.FETCHED_FILE).touch()
+        (cur_results.parent / consts.PUBLISHED_SFILE).touch()
 
         yield dest_dir
 

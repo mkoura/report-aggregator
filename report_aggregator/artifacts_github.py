@@ -43,7 +43,7 @@ def process_artifact(dest_dir: Path, download_url: str) -> None:
     dest_file = dest_dir / consts.REPORTS_ARCHIVE
     zip_file = dest_dir / f"{consts.ARTIFACT_NAME}.zip"
 
-    if not (dest_dir / consts.DONE_FILE).exists():
+    if not (dest_dir / consts.DOWNLOADED_SFILE).exists():
         dest_file.unlink(missing_ok=True)
         zip_file.unlink(missing_ok=True)
         LOGGER.info(f"Downloading artifact: {dest_file}")
@@ -63,4 +63,4 @@ def process_artifact(dest_dir: Path, download_url: str) -> None:
                 ar.rename(dest_file)
                 break
 
-    (dest_dir / consts.DONE_FILE).touch()
+    (dest_dir / consts.DOWNLOADED_SFILE).touch()
