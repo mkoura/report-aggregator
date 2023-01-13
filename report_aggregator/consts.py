@@ -1,7 +1,8 @@
 import os
 
-DONE_FILE = ".done"
-FETCHED_FILE = ".fetched"
+DOWNLOADED_SFILE = ".downloaded"
+PUBLISHED_SFILE = ".published"
+
 STEPS_BASE = "step"
 REPORTS_DIRNAME = "allure-results"
 REPORTS_ARCHIVE = "allure-results.tar.xz"
