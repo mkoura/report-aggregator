@@ -83,6 +83,10 @@ def get_report(
         if key.startswith("_coverage") or key in SKIPPED:
             continue
 
+        if arg_name == "create-mir-certificate" and key.startswith("--"):
+            # ignore legacy options that were superceded by `stake-addresses` command
+            continue
+
         if key.startswith("_count"):
             uncovered_db[key] = value
             continue
