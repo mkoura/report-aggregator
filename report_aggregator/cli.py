@@ -5,6 +5,7 @@ from pathlib import Path
 import click
 
 from report_aggregator import consts
+from report_aggregator import coverage_publisher
 from report_aggregator import nightly_buildkite
 from report_aggregator import nightly_github
 from report_aggregator import publisher
@@ -145,8 +146,31 @@ def publish(results_dir: str, web_dir: str, aggregate: bool) -> None:
 
         publisher.publish(
             new_results_base_dir=Path(results_dir),
-            results_base_dir=Path(results_tmp_dir),
             web_base_dir=Path(web_dir),
-            reports_tmp_dir=Path(reports_tmp_dir),
+            results_tmp_dir=results_tmp_dir,
+            reports_tmp_dir=reports_tmp_dir,
             aggregate_results=aggregate,
         )
+
+
+@cli.command("publish-coverage")
+@click.option(
+    "-d",
+    "--results-dir",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Base directory with results.",
+)
+@click.option(
+    "-w",
+    "--web-dir",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Base directory for published coverage.",
+)
+def publish_coverage(results_dir: str, web_dir: str) -> None:
+    """Publish reports."""
+    coverage_publisher.publish(
+        results_base_dir=Path(results_dir),
+        web_dir=Path(web_dir),
+    )

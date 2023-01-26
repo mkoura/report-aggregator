@@ -121,7 +121,7 @@ def download_nightly_results(base_dir: Path, timedelta_mins: int = consts.TIMEDE
                 dest_dir.mkdir(parents=True, exist_ok=True)
                 dest_file = dest_dir / consts.REPORTS_ARCHIVE
 
-                if not (dest_dir / consts.DOWNLOADED_SFILE).exists():
+                if not (dest_dir / consts.REPORT_DOWNLOADED_SFILE).exists():
                     dest_file.unlink(missing_ok=True)
                     LOGGER.info(f"Downloading artifact: {dest_file}")
 
@@ -133,5 +133,5 @@ def download_nightly_results(base_dir: Path, timedelta_mins: int = consts.TIMEDE
                         dest_file=dest_file,
                     )
 
-                with open(dest_dir / consts.DOWNLOADED_SFILE, "wb"):
+                with open(dest_dir / consts.REPORT_DOWNLOADED_SFILE, "wb"):
                     pass

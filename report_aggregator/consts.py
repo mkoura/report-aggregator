@@ -1,7 +1,9 @@
 import os
 
-DOWNLOADED_SFILE = ".downloaded"
-PUBLISHED_SFILE = ".published"
+REPORT_DOWNLOADED_SFILE = ".downloaded"
+REPORT_PUBLISHED_SFILE = ".published"
+
+COV_DOWNLOADED_SFILE = ".downloaded_cov"
 
 STEPS_BASE = "step"
 REPORTS_DIRNAME = "allure-results"
@@ -15,4 +17,7 @@ AUTH_HEADERS = {
 }
 ORG_NAME = "input-output-hk"
 REPO_SLUG = f"{ORG_NAME}/cardano-node-tests"
-ARTIFACT_NAME = "allure-results"
+RESULTS_ARTIFACT_NAME = "allure-results"
+
+COV_ARTIFACT_NAME = "cli-coverage"
+COV_FILE_NAME = "cli-coverage.json"
