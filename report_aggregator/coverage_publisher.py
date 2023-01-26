@@ -131,8 +131,10 @@ def publish(
 
     # round the top-level coverage
     top_coverage = report.get("_coverage_cardano-cli")
+    rounded_coverage = 0
     if top_coverage is not None:
-        report["_coverage_cardano-cli"] = round(top_coverage)
+        rounded_coverage = round(top_coverage)
+        report["_coverage_cardano-cli"] = rounded_coverage
 
     web_dir.mkdir(parents=True, exist_ok=True)
     todays_coverage = web_dir / f"coverage_{time.strftime('%Y%m%d')}.json"
@@ -147,3 +149,7 @@ def publish(
     if latest_coverage.is_symlink():
         latest_coverage.unlink()
     latest_coverage.symlink_to(todays_coverage.name)
+
+    # publish total coverage percentage
+    if rounded_coverage:
+        (web_dir / "coverage.txt").write_text(str(rounded_coverage))
