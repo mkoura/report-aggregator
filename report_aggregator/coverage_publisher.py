@@ -110,6 +110,10 @@ def get_report(
         if count and not uncovered_only:
             uncovered_db[key] = count
 
+    # in case all options were skipped, the command is covered if it was executed at least once
+    if covered_count == 0 and coverage[f"_count_{arg_name}"] > 0:
+        covered_count = 1
+
     uncovered_db[f"_coverage_{arg_name}"] = (
         (100 / ((covered_count + uncovered_count) / covered_count)) if covered_count else 0
     )
