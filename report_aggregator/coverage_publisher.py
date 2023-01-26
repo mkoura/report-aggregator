@@ -93,7 +93,7 @@ def get_report(
 
         if isinstance(value, dict):
             ret_db, ret_covered_count, ret_uncovered_count = get_report(
-                key, value, uncovered_only=uncovered_only
+                arg_name=key, coverage=value, uncovered_only=uncovered_only
             )
             covered_count += ret_covered_count
             uncovered_count += ret_uncovered_count
@@ -123,7 +123,7 @@ def publish(
 ) -> None:
     """Publish coverage report."""
     coverage = get_merged_coverage(coverage_files=get_latest_coverage(base_dir=results_base_dir))
-    report, *__ = get_report("cardano-cli", coverage)
+    report, *__ = get_report(arg_name="cardano-cli", coverage=coverage)
 
     web_dir.mkdir(parents=True, exist_ok=True)
     todays_coverage = web_dir / f"coverage_{time.strftime('%Y%m%d')}.json"
