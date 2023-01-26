@@ -89,8 +89,8 @@ def get_job_from_tree(inner_dir: Path, base_dir: Path) -> Job:
 
 def get_new_results(base_dir: Path) -> Generator[Path, None, None]:
     """Walk new results directories and yield each set of results."""
-    for p in base_dir.rglob(consts.DOWNLOADED_SFILE):
-        if (p.parent / consts.PUBLISHED_SFILE).exists():
+    for p in base_dir.rglob(consts.REPORT_DOWNLOADED_SFILE):
+        if (p.parent / consts.REPORT_PUBLISHED_SFILE).exists():
             continue
 
         result_file = p.parent / consts.REPORTS_ARCHIVE
@@ -113,7 +113,7 @@ def unpack_results_archive(archive_file: Path) -> Path:
     return unpacked_dir
 
 
-def get_results(new_results_base_dir: Path, results_base_dir: Path) -> Generator[Path, None, None]:
+def get_results(new_results_base_dir: Path, out_dir: Path) -> Generator[Path, None, None]:
     """Copy/unpack/clean new results."""
     for cur_results in sorted(get_new_results(base_dir=new_results_base_dir)):
         results_dir = cur_results
@@ -126,7 +126,7 @@ def get_results(new_results_base_dir: Path, results_base_dir: Path) -> Generator
 
         LOGGER.info(f"Processing {job_rec}")
 
-        dest_dir = results_base_dir / job_rec.job_name
+        dest_dir = out_dir / job_rec.job_name
         if job_rec.revision:
             dest_dir = dest_dir / job_rec.revision
         if job_rec.step:
@@ -140,20 +140,20 @@ def get_results(new_results_base_dir: Path, results_base_dir: Path) -> Generator
         if extracted_dir:
             shutil.rmtree(extracted_dir, ignore_errors=True, onerror=None)
 
-        (cur_results.parent / consts.PUBLISHED_SFILE).touch()
+        (cur_results.parent / consts.REPORT_PUBLISHED_SFILE).touch()
 
         yield dest_dir
 
 
-def aggregate_testrun(results_dirs: Iterable[Path], results_base_dir: Path) -> List[Path]:
+def aggregate_testrun(results_dirs: Iterable[Path], out_dir: Path) -> List[Path]:
     """Aggregate new results from the same testrun (job)."""
-    mixed_results = results_base_dir / "mixed_results"
+    mixed_results = out_dir / "mixed_results"
     shutil.rmtree(mixed_results, ignore_errors=True, onerror=None)
     mixed_results.mkdir(parents=True, exist_ok=True)
 
     dest_dirs = set()
     for results_dir in results_dirs:
-        job_rec = get_job_from_tree(inner_dir=results_dir, base_dir=results_base_dir)
+        job_rec = get_job_from_tree(inner_dir=results_dir, base_dir=out_dir)
 
         LOGGER.info(f"Aggregating {job_rec}")
 
@@ -231,7 +231,7 @@ def overwrite_statuses(results_dir: Path) -> None:
 
 
 def generate_report(
-    results_base_dir: Path, results_dir: Path, reports_base_dir: Path, web_base_dir: Path
+    results_base_dir: Path, results_dir: Path, reports_work_dir: Path, web_base_dir: Path
 ) -> Path:
     """Generate report from stored results."""
     job_rec = get_job_from_tree(inner_dir=results_dir, base_dir=results_base_dir)
@@ -241,7 +241,7 @@ def generate_report(
     if job_rec.step:
         dest_path_parts.append(job_rec.step)
 
-    report_dir = Path(*reports_base_dir.parts, *dest_path_parts)
+    report_dir = Path(*reports_work_dir.parts, *dest_path_parts)
     web_dir = Path(*web_base_dir.parts, *dest_path_parts)
 
     # make clean temporary directory for generated report
@@ -270,30 +270,28 @@ def generate_report(
 
 def publish(
     new_results_base_dir: Path,
-    results_base_dir: Path,
     web_base_dir: Path,
+    results_tmp_dir: Path,
     reports_tmp_dir: Path,
     aggregate_results: bool = False,
 ) -> None:
     """Publish reports to the web."""
-    # directory where results from last run are stored
-    results_base_dir.mkdir(parents=True, exist_ok=True)
+    # tmp dir where unpacked / aggregated results are stored
+    results_tmp_dir.mkdir(parents=True, exist_ok=True)
     # temp dir where reports are generated before moving to the web dir
     reports_tmp_dir.mkdir(parents=True, exist_ok=True)
 
     results_dirs: Iterable[Path] = get_results(
-        new_results_base_dir=new_results_base_dir, results_base_dir=results_base_dir
+        new_results_base_dir=new_results_base_dir, out_dir=results_tmp_dir
     )
     if aggregate_results:
-        results_dirs = aggregate_testrun(
-            results_dirs=results_dirs, results_base_dir=results_base_dir
-        )
+        results_dirs = aggregate_testrun(results_dirs=results_dirs, out_dir=results_tmp_dir)
 
     for results_dir in results_dirs:
         web_dir = generate_report(
-            results_base_dir=results_base_dir,
+            results_base_dir=results_tmp_dir,
             results_dir=results_dir,
-            reports_base_dir=reports_tmp_dir,
+            reports_work_dir=reports_tmp_dir,
             web_base_dir=web_base_dir,
         )
         LOGGER.info(f"Generated report: {web_dir}")

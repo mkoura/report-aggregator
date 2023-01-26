@@ -53,21 +53,37 @@ def download_nightly_results(
 
         for cur_run in get_runs(workflow=workflow, started_from=started_from):
             run_num = cur_run.run_number + RUN_OFFSET
+            dest_dir = base_dir / workflow_slug / str(run_num)
             LOGGER.info(f"Processing run: {cur_run.run_number} ({run_num})")
 
-            result_artifacts = list(artifacts_github.get_result_artifacts(run=cur_run))
-            has_steps = len(result_artifacts) > 1
+            run_artifacts = list(artifacts_github.get_run_artifacts(run=cur_run))
 
-            if has_steps and "step" not in result_artifacts[0].name:
+            result_artifacts = list(
+                artifacts_github.get_result_artifacts(run_artifacts=run_artifacts)
+            )
+            has_steps = result_artifacts and ("step" in result_artifacts[0].name)
+
+            if len(result_artifacts) > 1 and not has_steps:
                 LOGGER.warning("Skipping run with unexpected artifacts")
                 continue
 
-            for step, artifact in enumerate(result_artifacts, start=1):
-                dest_dir = base_dir / workflow_slug / str(run_num)
+            for step, result_artifact in enumerate(result_artifacts, start=1):
+                a_dest_dir = dest_dir
                 if has_steps:
-                    dest_dir = dest_dir / f"{consts.STEPS_BASE}{step}"
+                    a_dest_dir = dest_dir / f"{consts.STEPS_BASE}{step}"
+                a_dest_dir.mkdir(parents=True, exist_ok=True)
+
+                artifacts_github.process_result_artifact(
+                    dest_dir=a_dest_dir, download_url=result_artifact.archive_download_url
+                )
+
+            coverage_artifacts = list(
+                artifacts_github.get_coverage_artifacts(run_artifacts=run_artifacts)
+            )
+            if coverage_artifacts:
                 dest_dir.mkdir(parents=True, exist_ok=True)
 
-                artifacts_github.process_artifact(
-                    dest_dir=dest_dir, download_url=artifact.archive_download_url
+            for cov_artifact in coverage_artifacts:
+                artifacts_github.process_coverage_artifact(
+                    dest_dir=dest_dir, download_url=cov_artifact.archive_download_url
                 )

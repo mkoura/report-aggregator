@@ -77,7 +77,10 @@ def download_testrun_results(
             LOGGER.info(f"Processing run: {cur_run.run_number}")
             workflow_found = True
 
-            result_artifacts = list(artifacts_github.get_result_artifacts(run=cur_run))
+            run_artifacts = list(artifacts_github.get_run_artifacts(run=cur_run))
+            result_artifacts = list(
+                artifacts_github.get_result_artifacts(run_artifacts=run_artifacts)
+            )
             has_steps = len(result_artifacts) > 1
 
             if has_steps and "step" not in result_artifacts[0].name:
@@ -90,7 +93,7 @@ def download_testrun_results(
                     dest_dir = dest_dir / f"{consts.STEPS_BASE}{step}"
                 dest_dir.mkdir(parents=True, exist_ok=True)
 
-                artifacts_github.process_artifact(
+                artifacts_github.process_result_artifact(
                     dest_dir=dest_dir, download_url=artifact.archive_download_url
                 )
 
