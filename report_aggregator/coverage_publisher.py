@@ -129,6 +129,11 @@ def publish(
     coverage = get_merged_coverage(coverage_files=get_latest_coverage(base_dir=results_base_dir))
     report, *__ = get_report(arg_name="cardano-cli", coverage=coverage)
 
+    # round the top-level coverage
+    top_coverage = report.get("_coverage_cardano-cli")
+    if top_coverage is not None:
+        report["_coverage_cardano-cli"] = round(top_coverage)
+
     web_dir.mkdir(parents=True, exist_ok=True)
     todays_coverage = web_dir / f"coverage_{time.strftime('%Y%m%d')}.json"
 
