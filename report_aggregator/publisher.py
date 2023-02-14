@@ -9,6 +9,7 @@ from typing import Generator
 from typing import Iterable
 from typing import List
 from typing import NamedTuple
+from typing import Set
 from typing import Tuple
 
 from report_aggregator import consts
@@ -206,12 +207,31 @@ def copy_history(prev_report_dir: Path, results_dir: Path) -> None:
     shutil.copytree(history_dir, results_dir / "history", symlinks=True)
 
 
+def get_teardown_errors(results_dir: Path) -> Set[str]:
+    """Get tests with teardown errors."""
+
+    teardown_failures: Set[str] = set()
+
+    for container_json in results_dir.glob("*-container.json"):
+        with open(container_json, encoding="utf-8") as in_fp:
+            result = json.load(in_fp)
+
+        for after in result.get("afters", []):
+            if after.get("status") == "failed":
+                teardown_failures.update(result.get("children"))
+
+    return teardown_failures
+
+
 def overwrite_statuses(results_dir: Path) -> None:
     """Overwrite selected test statuses.
 
     broken -> failed
     XFAIL skipped -> broken
+    XFAIL skipped + teardown error -> failed
     """
+    teardown_failures = get_teardown_errors(results_dir=results_dir)
+
     for result_json in results_dir.glob("*-result.json"):
         overwrite = False
 
@@ -219,7 +239,7 @@ def overwrite_statuses(results_dir: Path) -> None:
             result = json.load(in_fp)
 
         if result["status"] == "skipped" and "XFAIL reason" in result["statusDetails"]["message"]:
-            result["status"] = "broken"
+            result["status"] = "failed" if result["uuid"] in teardown_failures else "broken"
             overwrite = True
         elif result["status"] == "broken":
             result["status"] = "failed"
