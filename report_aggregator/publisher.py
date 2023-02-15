@@ -207,9 +207,8 @@ def copy_history(prev_report_dir: Path, results_dir: Path) -> None:
     shutil.copytree(history_dir, results_dir / "history", symlinks=True)
 
 
-def get_teardown_errors(results_dir: Path) -> Set[str]:
-    """Get tests with teardown errors."""
-
+def get_teardown_failures(results_dir: Path) -> Set[str]:
+    """Get tests with teardown failures."""
     teardown_failures: Set[str] = set()
 
     for container_json in results_dir.glob("*-container.json"):
@@ -228,9 +227,9 @@ def overwrite_statuses(results_dir: Path) -> None:
 
     broken -> failed
     XFAIL skipped -> broken
-    XFAIL skipped + teardown error -> failed
+    XFAIL skipped + teardown failure -> failed
     """
-    teardown_failures = get_teardown_errors(results_dir=results_dir)
+    teardown_failures = get_teardown_failures(results_dir=results_dir)
 
     for result_json in results_dir.glob("*-result.json"):
         overwrite = False
