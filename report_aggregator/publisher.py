@@ -216,7 +216,7 @@ def get_teardown_failures(results_dir: Path) -> Set[str]:
             result = json.load(in_fp)
 
         for after in result.get("afters", []):
-            if after.get("status") == "failed":
+            if after.get("status") in ("failed", "broken"):
                 teardown_failures.update(result.get("children"))
 
     return teardown_failures
