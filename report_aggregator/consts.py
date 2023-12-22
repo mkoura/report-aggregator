@@ -15,7 +15,7 @@ AUTH_HEADERS = {
     "Accept": "application/vnd.github+json",
     "Authorization": f"Bearer {GITHUB_TOKEN}",
 }
-ORG_NAME = "input-output-hk"
+ORG_NAME = "IntersectMBO"
 REPO_SLUG = f"{ORG_NAME}/cardano-node-tests"
 RESULTS_ARTIFACT_NAME = "allure-results"
 
