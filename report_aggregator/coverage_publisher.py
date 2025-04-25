@@ -62,7 +62,7 @@ def get_merged_coverage(coverage_files: Iterable[Path]) -> Dict[str, Any]:
         with open(in_coverage, encoding="utf-8") as infile:
             coverage = json.load(infile)
 
-        if coverage.get("cardano-cli", {}).get("address") is None:
+        if coverage.get("cardano-cli", {}).get("latest") is None:
             raise AttributeError(
                 f"Data in '{in_coverage}' doesn't seem to be in proper coverage format."
             )
