@@ -24,10 +24,12 @@ SKIPPED = (
 
 def get_latest_coverage(base_dir: Path) -> Generator[Path, None, None]:
     """Walk new results directories and yield latest coverage."""
+    ago_14_days = time.time() - 14 * 24 * 3600
     for nd in base_dir.rglob("*tests-nightly*"):
         for p in sorted(nd.rglob(consts.COV_DOWNLOADED_SFILE), reverse=True):
             cov_file = p.parent / consts.COV_FILE_NAME
-            if cov_file.is_file():
+            # Don't consider the file if it is older than 14 days
+            if cov_file.is_file() and cov_file.stat().st_mtime > ago_14_days:
                 LOGGER.debug(f"Using coverage file {cov_file}")
                 yield cov_file
                 # only last coverage file per nightly workflow`
