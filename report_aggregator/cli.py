@@ -11,7 +11,6 @@ from report_aggregator import nightly_github
 from report_aggregator import publisher
 from report_aggregator import regression_github
 
-
 DEFAULT_LOG_LEVEL = "WARNING"
 
 

@@ -1,4 +1,5 @@
 """Publish the reports to the web."""
+
 import json
 import logging
 import shutil
@@ -133,13 +134,13 @@ def get_results(new_results_base_dir: Path, out_dir: Path) -> Generator[Path, No
         if job_rec.step:
             dest_dir = dest_dir / job_rec.step
 
-        shutil.rmtree(dest_dir, ignore_errors=True, onerror=None)
+        shutil.rmtree(dest_dir, ignore_errors=True)
         dest_dir.mkdir(parents=True)
         shutil.copytree(results_dir, dest_dir, symlinks=True, dirs_exist_ok=True)
 
         # delete extracted files
         if extracted_dir:
-            shutil.rmtree(extracted_dir, ignore_errors=True, onerror=None)
+            shutil.rmtree(extracted_dir, ignore_errors=True)
 
         (cur_results.parent / consts.REPORT_PUBLISHED_SFILE).touch()
 
@@ -149,7 +150,7 @@ def get_results(new_results_base_dir: Path, out_dir: Path) -> Generator[Path, No
 def aggregate_testrun(results_dirs: Iterable[Path], out_dir: Path) -> List[Path]:
     """Aggregate new results from the same testrun (job)."""
     mixed_results = out_dir / "mixed_results"
-    shutil.rmtree(mixed_results, ignore_errors=True, onerror=None)
+    shutil.rmtree(mixed_results, ignore_errors=True)
     mixed_results.mkdir(parents=True, exist_ok=True)
 
     dest_dirs = set()
@@ -203,7 +204,7 @@ def copy_history(prev_report_dir: Path, results_dir: Path) -> None:
     if not history_dir.is_dir():
         return
 
-    shutil.rmtree(results_dir / "history", ignore_errors=True, onerror=None)
+    shutil.rmtree(results_dir / "history", ignore_errors=True)
     shutil.copytree(history_dir, results_dir / "history", symlinks=True)
 
 
@@ -264,7 +265,7 @@ def generate_report(
     web_dir = Path(*web_base_dir.parts, *dest_path_parts)
 
     # make clean temporary directory for generated report
-    shutil.rmtree(report_dir, ignore_errors=True, onerror=None)
+    shutil.rmtree(report_dir, ignore_errors=True)
     report_dir.mkdir(parents=True)
 
     # copy history files from last published report
@@ -280,7 +281,7 @@ def generate_report(
     # generate badge endpoint
     gen_badge_endpoint(report_dir=report_dir)
 
-    shutil.rmtree(web_dir, ignore_errors=True, onerror=None)
+    shutil.rmtree(web_dir, ignore_errors=True)
     web_dir.mkdir(parents=True)
     shutil.copytree(report_dir, web_dir, symlinks=True, dirs_exist_ok=True)
 

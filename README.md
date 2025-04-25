@@ -9,9 +9,9 @@ Installation steps:
 
 ```text
 # create python virtual env
-python3 -m venv .env
+python3 -m venv .venv
 # activate python virtual env
-. .env/bin/activate
+. .venv/bin/activate
 # update python virtual env
 python3 -m pip install --upgrade pip
 python3 -m pip install --upgrade wheel
