@@ -1,4 +1,5 @@
 """Download nightly testing results from Github."""
+
 import datetime
 import logging
 from pathlib import Path
@@ -45,7 +46,9 @@ def download_nightly_results(
     """Download results from all recent nightly jobs."""
     github_obj = github.Github(consts.GITHUB_TOKEN)
     repo_obj = github_obj.get_repo(repo_slug)
-    started_from = datetime.datetime.now() - datetime.timedelta(minutes=timedelta_mins)
+    started_from = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(
+        minutes=timedelta_mins
+    )
 
     for workflow in get_workflows(repo_obj=repo_obj):
         workflow_slug = get_slug(name=workflow.name)

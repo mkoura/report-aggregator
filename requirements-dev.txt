@@ -1,9 +1,9 @@
--e .
+-e . --config-settings editable_mode=compat
 
 # linting
 mypy
 pre-commit
-pylint
 types-requests
 
+build
 virtualenv

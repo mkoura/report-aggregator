@@ -1,4 +1,5 @@
 """Handle Github artifacts."""
+
 import logging
 import zipfile
 from pathlib import Path
@@ -39,7 +40,8 @@ def get_coverage_artifacts(
 def download_artifact(url: str, dest_file: Path) -> Path:
     """Download artifact from Github."""
     if not url.startswith("https://"):
-        raise ValueError(f"Invalid URL: {url}")
+        err = f"Invalid URL: {url}"
+        raise ValueError(err)
 
     with requests.get(
         url, headers=consts.AUTH_HEADERS, stream=True, allow_redirects=True, timeout=300
