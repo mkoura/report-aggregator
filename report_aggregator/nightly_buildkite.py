@@ -96,7 +96,9 @@ def download_nightly_results(base_dir: Path, timedelta_mins: int = consts.TIMEDE
     buildkite_obj = buildkite.Buildkite()
     buildkite_obj.set_access_token(access_token=BUILDKITE_TOKEN)
 
-    check_from_time = datetime.datetime.now() - datetime.timedelta(minutes=timedelta_mins)  # noqa: DTZ005
+    check_from_time = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(
+        minutes=timedelta_mins
+    )
 
     pipelines = get_pipelines(buildkite_obj=buildkite_obj)
     for pipeline in pipelines:
