@@ -6,7 +6,6 @@ import click
 
 from report_aggregator import consts
 from report_aggregator import coverage_publisher
-from report_aggregator import nightly_buildkite
 from report_aggregator import nightly_github
 from report_aggregator import publisher
 from report_aggregator import regression_github
@@ -26,29 +25,6 @@ def init_log(log_level: str = DEFAULT_LOG_LEVEL) -> None:
 @click.option("--log-level", default=DEFAULT_LOG_LEVEL, help="Logging level.")
 def cli(log_level: str = DEFAULT_LOG_LEVEL) -> None:
     init_log(log_level=log_level)
-
-
-@cli.command("nightly-buildkite")
-@click.option(
-    "-d",
-    "--results-dir",
-    required=True,
-    type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    help="Base directory for results.",
-)
-@click.option(
-    "-m",
-    "--timedelta-mins",
-    type=int,
-    default=consts.TIMEDELTA_MINS,
-    show_default=True,
-    help="Look for jobs finished from TIMEDELTA_MINS in the past until now (in minutes).",
-)
-def nightly_buildkite_cli(results_dir: str, timedelta_mins: int) -> None:
-    """Download nightly results from Buildkite."""
-    nightly_buildkite.download_nightly_results(
-        base_dir=Path(results_dir), timedelta_mins=timedelta_mins
-    )
 
 
 @cli.command("nightly")
