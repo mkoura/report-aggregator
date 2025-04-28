@@ -55,7 +55,7 @@ def download_testrun_results(
     timedelta_mins: int = SEARCH_PAST_MINS,
 ) -> None:
     """Download results from all recent nightly jobs."""
-    github_obj = github.Github(consts.GITHUB_TOKEN)
+    github_obj = github.Github(login_or_token=consts.GITHUB_TOKEN)
     repo_obj = github_obj.get_repo(repo_slug)
     started_from = datetime.datetime.now() - datetime.timedelta(minutes=timedelta_mins)  # noqa: DTZ005
 
