@@ -44,7 +44,7 @@ def download_nightly_results(
     base_dir: Path, repo_slug: str = consts.REPO_SLUG, timedelta_mins: int = consts.TIMEDELTA_MINS
 ) -> None:
     """Download results from all recent nightly jobs."""
-    github_obj = github.Github(login_or_token=consts.GITHUB_TOKEN)
+    github_obj = github.Github(auth=github.Auth.Token(consts.GITHUB_TOKEN))
     repo_obj = github_obj.get_repo(repo_slug)
     started_from = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(
         minutes=timedelta_mins
