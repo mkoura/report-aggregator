@@ -238,7 +238,9 @@ def overwrite_statuses(results_dir: Path) -> None:
         with open(result_json, encoding="utf-8") as in_fp:
             result = json.load(in_fp)
 
-        if result["status"] == "skipped" and "XFAIL reason" in result["statusDetails"]["message"]:
+        if result["status"] == "skipped" and result.get("statusDetails", {}).get(
+            "message", ""
+        ).startswith("XFAIL"):
             result["status"] = "failed" if result["uuid"] in teardown_failures else "broken"
             overwrite = True
         elif result["status"] == "broken":
