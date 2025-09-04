@@ -15,10 +15,10 @@ LOGGER = logging.getLogger(__name__)
 SKIPPED = (
     "--out-file",
     "--testnet-magic",
-    "--mainnet",
-    "--cardano-mode",
+    "compatible",
     "create-cardano",
-    "help",
+    "create-testnet-data",
+    "legacy",
 )
 
 
