@@ -90,6 +90,15 @@ def get_job_from_tree(inner_dir: Path, base_dir: Path) -> Job:
     return Job(job_name=job_path.name, revision=revision, build_id="", step=step)
 
 
+def get_title_from_job(job: Job) -> str:
+    """Get title string from `Job`, skipping empty components."""
+    parts = [job.revision or job.job_name, job.step]
+    title = "/".join(p for p in parts if p)
+    if title.startswith("cardano-node-tests-"):
+        title = title[len("cardano-node-tests-") :]
+    return title
+
+
 def get_new_results(base_dir: Path) -> Generator[Path, None, None]:
     """Walk new results directories and yield each set of results."""
     for p in base_dir.rglob(consts.REPORT_DOWNLOADED_SFILE):
@@ -277,8 +286,20 @@ def generate_report(
     # overwrite selected statuses
     overwrite_statuses(results_dir=results_dir)
 
+    # get report title
+    title = get_title_from_job(job=job_rec)
+
     # generate Allure report
-    cli_args = ["allure", "generate", str(results_dir), "-o", str(report_dir), "--clean"]
+    cli_args = [
+        "allure",
+        "generate",
+        str(results_dir),
+        "-o",
+        str(report_dir),
+        "--name",
+        title,
+        "--clean",
+    ]
     cli(cli_args=cli_args)
 
     # generate badge endpoint
