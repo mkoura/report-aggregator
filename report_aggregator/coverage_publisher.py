@@ -44,9 +44,11 @@ def merge_coverage(dict_a: dict, dict_b: dict) -> dict:
     mergeable = (list, set, tuple)
     addable = (int, float)
     for key, value in dict_b.items():
+        # pyrefly: ignore  # invalid-argument
         if key in dict_a and isinstance(value, mergeable) and isinstance(dict_a[key], mergeable):
             new_list = set(dict_a[key]).union(value)
             dict_a[key] = sorted(new_list)
+        # pyrefly: ignore  # invalid-argument
         elif key in dict_a and isinstance(value, addable) and isinstance(dict_a[key], addable):
             dict_a[key] += value
         elif (key not in dict_a) or not isinstance(value, dict):

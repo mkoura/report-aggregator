@@ -30,6 +30,7 @@ def cli(cli_args: Iterable[str]) -> Tuple[str, str]:
     assert not isinstance(cli_args, str), "`cli_args` must be sequence of strings"
     with subprocess.Popen(list(cli_args), stdout=subprocess.PIPE, stderr=subprocess.PIPE) as p:
         stdout, stderr = p.communicate()
+    # pyrefly: ignore  # missing-attribute
     return stdout.decode("utf-8"), stderr.decode("utf-8")
 
 

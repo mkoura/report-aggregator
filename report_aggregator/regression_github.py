@@ -6,6 +6,9 @@ from pathlib import Path
 from typing import Generator
 
 import github
+from github import Repository as GRepository
+from github import Workflow as GWorkflow
+from github import WorkflowRun as GWorkflowRun
 
 from report_aggregator import artifacts_github
 from report_aggregator import consts
@@ -22,16 +25,16 @@ def get_slug(name: str) -> str:
 
 
 def get_workflows(
-    repo_obj: github.Repository.Repository,
-) -> Generator[github.Workflow.Workflow, None, None]:
+    repo_obj: GRepository.Repository,
+) -> Generator[GWorkflow.Workflow, None, None]:
     """Return active regression workflows."""
     workflows = (w for w in repo_obj.get_workflows() if NAME_BASE in w.name and w.state == "active")
     return workflows
 
 
 def get_runs(
-    workflow: github.Workflow.Workflow, testrun_name: str, started_from: datetime.datetime
-) -> Generator[github.WorkflowRun.WorkflowRun, None, None]:
+    workflow: GWorkflow.Workflow, testrun_name: str, started_from: datetime.datetime
+) -> Generator[GWorkflowRun.WorkflowRun, None, None]:
     """Return recent runs for a workflow."""
     for r in workflow.get_runs(event="workflow_dispatch", status="completed"):
         if r.created_at < started_from:

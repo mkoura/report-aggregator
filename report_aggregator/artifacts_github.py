@@ -6,8 +6,9 @@ from pathlib import Path
 from typing import Generator
 from typing import List
 
-import github
 import requests
+from github import Artifact as GArtifact
+from github import WorkflowRun as GWorkflowRun
 
 from report_aggregator import consts
 
@@ -15,23 +16,23 @@ LOGGER = logging.getLogger(__name__)
 
 
 def get_run_artifacts(
-    run: github.WorkflowRun.WorkflowRun,
-) -> Generator[github.Artifact.Artifact, None, None]:
+    run: GWorkflowRun.WorkflowRun,
+) -> Generator[GArtifact.Artifact, None, None]:
     """Return artifacts for a run."""
     return run.get_artifacts()  # type: ignore
 
 
 def get_result_artifacts(
-    run_artifacts: List[github.Artifact.Artifact],
-) -> Generator[github.Artifact.Artifact, None, None]:
+    run_artifacts: List[GArtifact.Artifact],
+) -> Generator[GArtifact.Artifact, None, None]:
     """Return results artifacts for a run."""
     result_artifacts = (a for a in run_artifacts if a.name.startswith(consts.RESULTS_ARTIFACT_NAME))
     return result_artifacts
 
 
 def get_coverage_artifacts(
-    run_artifacts: List[github.Artifact.Artifact],
-) -> Generator[github.Artifact.Artifact, None, None]:
+    run_artifacts: List[GArtifact.Artifact],
+) -> Generator[GArtifact.Artifact, None, None]:
     """Return coverage artifacts for a run."""
     result_artifacts = (a for a in run_artifacts if a.name.startswith(consts.COV_ARTIFACT_NAME))
     return result_artifacts
@@ -48,7 +49,7 @@ def download_artifact(url: str, dest_file: Path) -> Path:
     ) as r:
         r.raise_for_status()
         with open(dest_file, "wb") as f:
-            for chunk in r.iter_content(chunk_size=8192):
+            for chunk in r.iter_content(chunk_size=8192):  # noqa: FURB122
                 f.write(chunk)
 
     return dest_file
