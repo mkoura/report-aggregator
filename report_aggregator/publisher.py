@@ -71,7 +71,8 @@ def get_job_from_tree(inner_dir: Path, base_dir: Path) -> Job:
     * 'babbage_dbsync/40458eefa87c7c3abd8c6ba542d9e931d8b2ecb8' ->
         Job(job_name='babbage_dbsync', revision='40458eefa87c7c3abd8c6ba542d9e931d8b2ecb8',
             build_id='', step='')
-    * 'nightly-upgrade/step1' -> Job(job_name='nightly', revision='', build_id='', step="step1")
+    * 'nightly-upgrade/step1' ->
+        Job(job_name='nightly-upgrade', revision='', build_id='', step="step1")
     """
     revision_path = inner_dir
     step = ""
