@@ -73,10 +73,11 @@ def download_nightly_results(
                 LOGGER.warning("Skipping run with unexpected artifacts")
                 continue
 
-            for step, result_artifact in enumerate(result_artifacts, start=1):
+            for result_artifact in result_artifacts:
                 a_dest_dir = dest_dir
                 if has_steps:
-                    a_dest_dir = dest_dir / f"{consts.STEPS_BASE}{step}"
+                    step_id = result_artifact.name[len(consts.RESULTS_ARTIFACT_NAME) :].lstrip("-")
+                    a_dest_dir = dest_dir / step_id
                 a_dest_dir.mkdir(parents=True, exist_ok=True)
 
                 artifacts_github.process_result_artifact(

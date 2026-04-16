@@ -87,16 +87,17 @@ def download_testrun_results(
             result_artifacts = list(
                 artifacts_github.get_result_artifacts(run_artifacts=run_artifacts)
             )
-            has_steps = len(result_artifacts) > 1
+            has_steps = result_artifacts and ("step" in result_artifacts[0].name)
 
-            if has_steps and "step" not in result_artifacts[0].name:
+            if len(result_artifacts) > 1 and not has_steps:
                 LOGGER.warning("Skipping run with unexpected artifacts")
                 continue
 
-            for step, artifact in enumerate(result_artifacts, start=1):
+            for artifact in result_artifacts:
                 dest_dir = base_dest_dir / str(cur_run.run_number)
                 if has_steps:
-                    dest_dir = dest_dir / f"{consts.STEPS_BASE}{step}"
+                    step_id = artifact.name[len(consts.RESULTS_ARTIFACT_NAME) :].lstrip("-")
+                    dest_dir = dest_dir / step_id
                 dest_dir.mkdir(parents=True, exist_ok=True)
 
                 artifacts_github.process_result_artifact(
