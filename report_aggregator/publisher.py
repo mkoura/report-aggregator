@@ -106,11 +106,11 @@ def get_new_results(base_dir: Path) -> Generator[Path, None, None]:
         if (p.parent / consts.REPORT_PUBLISHED_SFILE).exists():
             continue
 
-        result_file = p.parent / consts.REPORTS_ARCHIVE
+        result_file = p.parent / consts.RESULTS_ARCHIVE
         if result_file.is_file():
             yield result_file
 
-        result_dir = p.parent / consts.REPORTS_DIRNAME
+        result_dir = p.parent / consts.RESULTS_DIRNAME
         if result_dir.is_dir():
             yield result_dir
 
@@ -118,11 +118,24 @@ def get_new_results(base_dir: Path) -> Generator[Path, None, None]:
 def unpack_results_archive(archive_file: Path) -> Path:
     """Unpack the result archive."""
     results_dir = archive_file.parent
+    unpacked_dir = results_dir / consts.RESULTS_DIRNAME
+    shutil.rmtree(unpacked_dir, ignore_errors=True)
 
     with tarfile.open(archive_file, "r:xz") as tar:
-        tar.extractall(path=results_dir)
+        tar.extractall(path=results_dir, filter="data")
 
-    unpacked_dir = results_dir / consts.REPORTS_DIRNAME
+    # if the resulting dir name contains step id, rename it
+    if not unpacked_dir.exists():
+        for r in results_dir.glob(f"{consts.RESULTS_DIRNAME}-step*"):
+            if not r.is_dir():
+                continue
+            r.rename(unpacked_dir)
+            break
+
+    if not unpacked_dir.is_dir():
+        err = f"Unpacked results dir not found in {results_dir}"
+        raise FileNotFoundError(err)
+
     return unpacked_dir
 
 
@@ -131,7 +144,7 @@ def get_results(new_results_base_dir: Path, out_dir: Path) -> Generator[Path, No
     for cur_results in sorted(get_new_results(base_dir=new_results_base_dir)):
         results_dir = cur_results
         extracted_dir = None
-        if cur_results.name == consts.REPORTS_ARCHIVE:
+        if cur_results.name == consts.RESULTS_ARCHIVE:
             results_dir = unpack_results_archive(archive_file=cur_results)
             extracted_dir = results_dir
 
