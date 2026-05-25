@@ -6,8 +6,8 @@ REPORT_PUBLISHED_SFILE = ".published"
 COV_DOWNLOADED_SFILE = ".downloaded_cov"
 
 STEPS_BASE = "step"
-REPORTS_DIRNAME = "allure-results"
-REPORTS_ARCHIVE = "allure-results.tar.xz"
+RESULTS_DIRNAME = "allure-results"
+RESULTS_ARCHIVE = "allure-results.tar.xz"
 TIMEDELTA_MINS = 48 * 60
 
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN") or ""

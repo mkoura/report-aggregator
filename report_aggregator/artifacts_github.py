@@ -71,7 +71,7 @@ def _process_artifact(dest_dir: Path, zip_file: Path, download_url: str) -> None
 
 def process_result_artifact(dest_dir: Path, download_url: str) -> None:
     """Process artifact."""
-    dest_file = dest_dir / consts.REPORTS_ARCHIVE
+    dest_file = dest_dir / consts.RESULTS_ARCHIVE
     zip_file = dest_dir / f"{consts.RESULTS_ARTIFACT_NAME}.zip"
 
     if not (dest_dir / consts.REPORT_DOWNLOADED_SFILE).exists():
