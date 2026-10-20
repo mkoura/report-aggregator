@@ -6,6 +6,7 @@ REPORT_PUBLISHED_SFILE = ".published"
 COV_DOWNLOADED_SFILE = ".downloaded_cov"
 
 STEPS_BASE = "step"
+LOCAL_JOB_NAME = "local"
 RESULTS_DIRNAME = "allure-results"
 RESULTS_ARCHIVE = "allure-results.tar.xz"
 TIMEDELTA_MINS = 48 * 60

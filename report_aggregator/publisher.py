@@ -46,6 +46,12 @@ def get_job_from_results(results_path: Path, base_dir: Path) -> Job:
     * 'nightly-upgrade/506/step1/allure-results.tar.xz' ->
         Job(job_name='nightly', revision='', build_id='506', step="step1")
     """
+    match results_path.relative_to(base_dir).parts:
+        case (consts.LOCAL_JOB_NAME, testrun_name, run_id, _):
+            return Job(
+                job_name=consts.LOCAL_JOB_NAME, revision=testrun_name, build_id=run_id, step=""
+            )
+
     steps_path = results_path.parent
     step = steps_path.name
     if not steps_path.name.startswith(consts.STEPS_BASE):
@@ -75,6 +81,10 @@ def get_job_from_tree(inner_dir: Path, base_dir: Path) -> Job:
     * 'nightly-upgrade/step1' ->
         Job(job_name='nightly-upgrade', revision='', build_id='', step="step1")
     """
+    match inner_dir.relative_to(base_dir).parts:
+        case (consts.LOCAL_JOB_NAME, testrun_name):
+            return Job(job_name=consts.LOCAL_JOB_NAME, revision=testrun_name, build_id="", step="")
+
     revision_path = inner_dir
     step = ""
     if inner_dir.name.startswith(consts.STEPS_BASE):
@@ -342,12 +352,14 @@ def publish(
     results_dirs: Iterable[Path] = get_results(
         new_results_base_dir=new_results_base_dir, out_dir=results_tmp_dir
     )
+    report_results_base_dir = results_tmp_dir
     if aggregate_results:
         results_dirs = aggregate_testrun(results_dirs=results_dirs, out_dir=results_tmp_dir)
+        report_results_base_dir = results_tmp_dir / "mixed_results"
 
     for results_dir in results_dirs:
         web_dir = generate_report(
-            results_base_dir=results_tmp_dir,
+            results_base_dir=report_results_base_dir,
             results_dir=results_dir,
             reports_work_dir=reports_tmp_dir,
             web_base_dir=web_base_dir,
