@@ -6,6 +6,7 @@ import click
 
 from report_aggregator import consts
 from report_aggregator import coverage_publisher
+from report_aggregator import local_results
 from report_aggregator import nightly_github
 from report_aggregator import publisher
 from report_aggregator import regression_github
@@ -89,6 +90,31 @@ def regression_github_cli(
         repo_slug=repo_slug,
         timedelta_mins=timedelta_mins,
     )
+
+
+@cli.command("local")
+@click.option(
+    "-d",
+    "--results-dir",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Base directory for results.",
+)
+@click.option(
+    "-s",
+    "--source-dir",
+    required=True,
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Directory named after the testrun, containing run subdirectories.",
+)
+def local_cli(results_dir: str, source_dir: str) -> None:
+    """Import results from local test runs."""
+    try:
+        local_results.import_testrun_results(
+            base_dir=Path(results_dir), source_dir=Path(source_dir)
+        )
+    except (OSError, ValueError) as exc:
+        raise click.ClickException(str(exc)) from exc
 
 
 @cli.command()
