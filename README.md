@@ -7,18 +7,8 @@ Aggregate results from multiple test runs and generate Allure reports.
 
 Installation steps:
 
-```text
-# create python virtual env
-python3 -m venv .venv
-# activate python virtual env
-. .venv/bin/activate
-# update python virtual env
-python3 -m pip install --upgrade pip
-python3 -m pip install --upgrade wheel
-python3 -m pip install --upgrade virtualenv
-virtualenv --upgrade-embed-wheels
-# install package
-python3 -m pip install --upgrade --upgrade-strategy eager -e .
+```sh
+make install
 ```
 
 Copy files from example cron job from `examples` directory and edit them as needed. Namely it is needed to provide the `GITHUB_TOKEN` (or `BUILDKITE_TOKEN`) variable.
